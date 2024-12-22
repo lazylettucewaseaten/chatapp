@@ -1,7 +1,7 @@
 # Chatapp
 Will add new features soon :)
 
-##Demo
+## Demo
 https://super-piroshki-a4ca5a.netlify.app/chat
 
 ## Features
@@ -11,7 +11,7 @@ https://super-piroshki-a4ca5a.netlify.app/chat
 - **AES-256 Encryption** for end-to-end encryption of messages.
 - **MongoDB** for storing user data and messages.
 
-##SetUp 
+## SetUp 
 Cretae ur .env file for them
 PORT=3000
 MONGO_URI=mongodb://localhost:27017/chatapp
