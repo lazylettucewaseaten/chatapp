@@ -12,10 +12,10 @@ https://super-piroshki-a4ca5a.netlify.app/chat
 - **MongoDB** for storing user data and messages.
 
 ## SetUp 
-Cretae ur .env file for them
-PORT=3000
-MONGO_URI=mongodb://localhost:27017/chatapp
-JWT_SECRET=your_secret_key_for_jwt
-AES_SECRET_KEY=your_secret_key_for_aes
+- Cretae ur .env file for them
+- PORT=3000
+- MONGO_URI=mongodb://localhost:27017/chatapp
+- JWT_SECRET=your_secret_key_for_jwt
+- AES_SECRET_KEY=your_secret_key_for_aes
 
 
