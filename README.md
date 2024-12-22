@@ -2,7 +2,7 @@
 Will add new features soon :)
 
 ## Demo
-https://super-piroshki-a4ca5a.netlify.app/chat
+https://super-piroshki-a4ca5a.netlify.app
 
 ## Features
 - **WebSocket** for real-time communication between clients and the server.
