@@ -18,4 +18,7 @@ https://super-piroshki-a4ca5a.netlify.app/chat
 - JWT_SECRET=your_secret_key_for_jwt
 - AES_SECRET_KEY=your_secret_key_for_aes
 
+## Make two folder one containing client other containing everything except client
 
+- npm run dev to run the client[frontend]
+- node app.js to run the backend
