@@ -1,8 +1,9 @@
 # Chatapp
 Will add new features soon :)
 
-## Demo
-https://super-piroshki-a4ca5a.netlify.app
+## Live Demo
+- might be slow cause of free hosting
+- https://candid-smakager-d5bee5.netlify.app/
 
 ## Features
 - **WebSocket** for real-time communication between clients and the server.
