@@ -7,24 +7,30 @@ import {
   Button, 
   Box, 
   Paper, 
-  IconButton 
+  IconButton,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import SendIcon from '@mui/icons-material/Send';
 import LogoutIcon from '@mui/icons-material/Logout';
-import zIndex from "@mui/material/styles/zIndex";
+import DeleteIcon from '@mui/icons-material/Delete';
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 
 const Chat = () => {
   const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
   const [message, setMessage] = useState("");
+  const [roomUsers,setRoomUsers]=useState([]);
   const [room, setRoom] = useState("");
+  //room is to be usde in code and roomname is because of my  input box
   const [roomname, setRoomname] = useState("");
   const [socketId, setSocketId] = useState("");
   const [messages, setMessages] = useState([]);
+  const [showAdminPanel, setShowAdminPanel] = useState(false); 
   const userid = localStorage.getItem("userId");
   const messagesEndRef = useRef(null);
+  const userMapRef = useRef(new Map());
+  let currentuseradmin=false;
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -33,7 +39,7 @@ const Chat = () => {
       return;
     }
 
-    const newSocket = io("https://chatapp-dct7.onrender.com", { auth: { token } });
+    const newSocket = io("http://localhost:3000", { auth: { token } });
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
@@ -42,6 +48,21 @@ const Chat = () => {
 
     newSocket.on("recieve-message", (data) => {
       setMessages((prev) => [...prev, data]);
+    });
+
+    newSocket.on("recieve-user-joining", (event) => {
+      // console.log("here i am now")
+      // console.log(event)
+      const specificUser = userMapRef.current.get(event.userid);
+      if(!specificUser){
+        const newUser = {
+          username: event.userid,
+          isadmin: false, 
+        };
+        userMapRef.current.set(newUser.username, newUser);
+        setRoomUsers((prev) => [...prev, newUser]);
+      }
+      // setRoomUsers(event);
     });
 
     return () => {
@@ -53,6 +74,8 @@ const Chat = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
+
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (message && room) {
@@ -63,15 +86,36 @@ const Chat = () => {
     }
   };
 
-  const onRoomJoin = (e) => {
+  const onRoomJoin = async (e) => {
     e.preventDefault();
     if (roomname) {
-      socket.emit("join-room", roomname);
+      socket.emit("join-room",{roomname,userid});
       setRoom(roomname);
       setRoomname("");
-      axios.get(`https://chatapp-dct7.onrender.com/rooms/${roomname}/messages`).then((res) => {
+      axios.get(`http://localhost:3000/rooms/${roomname}/messages`).then((res) => {
         setMessages(res.data);
       });
+      // console.log("afsd")
+      // console.log(messages)
+      // console.log("sfd")
+      await axios.patch(`http://localhost:3000/makeroom/${roomname}/${userid}`)
+      const adminlist=await axios.get(`http://localhost:3000/getadmins/${roomname}`)
+      if(adminlist.data.length!=0){
+        const userlist=adminlist.data[0].users
+        const adminInfoList = userlist.map((element) => ({
+          username: element.username,
+          isadmin: element.isadmin,
+        }));        
+        setRoomUsers(() => {
+          userMapRef.current.clear(); 
+          adminInfoList.forEach((admininfo) => {
+            userMapRef.current.set(admininfo.username, admininfo);
+          });
+          return Array.from(userMapRef.current.values());
+        });
+        socket.emit("userjoining",{userid,roomname})
+        // console.log(admininfo)
+      }
     }
   };
 
@@ -80,6 +124,17 @@ const Chat = () => {
     localStorage.removeItem("userId");
     navigate("/login");
   };
+
+  const deltemessage=()=>{
+    const usercheck=userMapRef.current.get(userid)
+    if(usercheck.isadmin){
+      axios.delete(`http://localhost:3000/delete/${room}`)
+    }
+  }
+
+  const adminpanel=()=>{
+    setShowAdminPanel((prev) => !prev);
+  }
 
   return (
     <Box 
@@ -136,6 +191,29 @@ const Chat = () => {
             <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
               Ashley's Chat Room
             </Typography>
+            <IconButton
+              onClick={deltemessage}
+              color="inherit"
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.2)'
+                }
+              }}
+            >
+              <DeleteIcon/>
+            </IconButton>
+            <IconButton
+              onClick={adminpanel}
+              color="inherit"
+              sx={{
+                '&:hover': {
+                  backgroundColor: 'rgba(255,255,255,0.2)'
+                }
+              }}
+            >
+              <AdminPanelSettingsIcon/>
+            </IconButton>
+            
             <IconButton 
               onClick={handleSignOut} 
               color="inherit"
@@ -147,6 +225,7 @@ const Chat = () => {
             >
               <LogoutIcon />
             </IconButton>
+
           </Box>
 
           <Box sx={{ p: 2 }}>
@@ -200,6 +279,7 @@ const Chat = () => {
               }}
             >
               {messages.map((m, i) => (
+              // console.log(m)
                 <Box 
                   key={i}
                   sx={{
@@ -208,6 +288,34 @@ const Chat = () => {
                     mb: 1
                   }}
                 >
+                    <Box
+                      sx={{
+                        backgroundColor: m.userId === userid ? '#e6f2ff' : '#fff0f0',
+                        color: m.userId === userid ? '#0d47a1' : '#b71c1c',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        maxWidth: '100%',
+                        wordWrap: 'break-word',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)',
+                        position: 'relative',
+                      }}
+                    >
+                      {/* Sender's Name */}
+                      <Typography
+                        variant="caption"
+                        sx={{
+                          display: 'block',
+                          color: m.userId === userid ? '#0d47a1' : '#b71c1c',
+                          fontWeight: 'bold',
+                          fontSize: '12px',
+                          mb: '4px',
+                          textAlign: 'left', 
+                        }}
+                      >
+                      {m.userId === userid ? 'You' : m.userId}
+                      
+                    </Typography>
+
                   <Typography
                     variant="body1"
                     sx={{
@@ -215,7 +323,7 @@ const Chat = () => {
                       color: m.userId === userid ? '#0d47a1' : '#b71c1c',
                       padding: '10px',
                       borderRadius: '12px',
-                      maxWidth: '70%',
+                      maxWidth: '100%',
                       wordWrap: 'break-word',
                       boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
                     }}
@@ -223,9 +331,11 @@ const Chat = () => {
                     {m.message}
                   </Typography>
                 </Box>
+                </Box>
               ))}
               <div ref={messagesEndRef} />
             </Box>
+
 
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
@@ -269,6 +379,36 @@ const Chat = () => {
           </Box>
         </Paper>
       </Container>
+      {showAdminPanel && (
+        <Paper
+          elevation={8}
+          sx={{
+            padding: 2,
+            borderRadius: 3,
+            background: 'rgba(255, 255, 255, 0.9)',
+            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
+          }}
+        >
+          <Typography variant="h6" sx={{ mb: 2 }}>
+          {roomUsers.map((user, index) => (
+              <Box 
+                key={index} 
+                sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
+              >
+                <Typography>{user.username}</Typography>
+                <Typography 
+                  sx={{ 
+                    color: user.isadmin ? 'green' : 'red', 
+                    fontWeight: 'bold' 
+                  }}
+                >
+                  {user.isadmin ? 'Admin' : 'Not Admin'}
+                </Typography>
+              </Box>
+            ))}
+          </Typography>
+        </Paper>
+      )}
     </Box>
   );
 };

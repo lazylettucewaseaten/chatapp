@@ -19,12 +19,11 @@ const LoginForm = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("https://chatapp-dct7.onrender.com/login", { username, password });
+      const res = await axios.post("http://localhost:3000/login", { username, password });
       const token = res.data.token;
       const id = res.data.userId;
       localStorage.setItem("authToken", token);
       localStorage.setItem("userId", id);
-      // console.log(res.data)
       navigate("/chat");
     } catch (err) {
       setError("Invalid username or password");

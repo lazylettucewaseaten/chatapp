@@ -2,10 +2,10 @@ const express=require('express')
 const mongoose=require('mongoose')
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-const {userschema,messageschema}=require('../models/schema')
+const {userschema,messageschema,roomschema}=require('../models/schema')
 const registeruser = async (req, res) => {
     try {
-        console.log(req.body);
+        // console.log(req.body);
         const existingUser = await userschema.findOne({ username: req.body.username });
         if (existingUser) {
             return res.status(400).json({ error: "Username already exists" });
@@ -52,4 +52,77 @@ const getRoomMessages = async (req, res) => {
     }
   };
 
-module.exports={loginuser,registeruser,getRoomMessages}
+
+const getRoomAdmins=async(req,res)=>{
+    try {
+      const {room} =req.params
+      // console.log(room)
+      const allusers=await roomschema.find({room});
+      // console.log(allusers)
+      res.json(allusers);
+      
+    } catch (error) {
+      res.status(500).json({error:""})
+      console.log(error)
+    }
+  }
+const makeRoomAdmins=async (req,res) => {
+  try {
+    const {roomname,username}=req.params
+    // const every=await roomschema.find({}) 
+    // console.log(every)
+    const room = await roomschema.findOne({ roomname });
+    if (!room) {
+        res.status(500).json({"message":"room not found"})
+    }
+    const user = room.users.find((u) => u.username === username);
+    if (!user) {
+      throw new Error("User not found");
+    }
+    user.isadmin=true;
+    await room.save();
+    res.status(200).json({"message":"User is now an admin now"})
+  } catch (error) {
+    console.log(error)
+  }
+}
+const createadminroom=async (req,res) => {
+  try {
+    const {roomname,username}=req.params
+    let room=await roomschema.findOne({room:roomname})
+    if(!room){
+      // console.log(`${roomname} not found `)
+      room =new roomschema({
+        room:roomname,
+        users:[{username,isadmin:true}],
+      })
+    }
+    else{
+      const user = room.users.find((u) => u.username === username);
+      if (!user) {
+        room.users.push({username:username,isadmin:false});
+        // console.log(`${username} has entered the  room  ${roomname}`)
+      }
+    }
+    await room.save();
+    res.status(200).json(room);
+  } 
+  catch (error) {
+    console.log(error)
+  }
+}
+const getDelete=async(req,res)=>{
+  try{
+    const {room}=req.params
+    await messageschema.deleteMany(
+      {room:room}
+    )
+    res.status(200).json({"message":"Deleted that chat room"})
+  }
+  catch(error){
+    console.log(error)
+  }
+}
+//onfrontend make a variabel true for checking adming or not  
+//then if 
+module.exports={loginuser,registeruser,getRoomMessages,makeRoomAdmins,getDelete,getRoomAdmins,createadminroom}

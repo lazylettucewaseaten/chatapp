@@ -51,7 +51,18 @@ const messageschema = mongoose.Schema({
       doc.message = decrypt(doc.message);
     }
   });
+  const roomschema=mongoose.Schema({
+    room:{type:String,required:true},
+    users: [
+      {
+          username: { type: String, required: true },
+          isadmin: { type: Boolean },
+      },
+  ],
+  })
+  
 module.exports = {
     userschema: mongoose.model('userschema', userschema),
-    messageschema:mongoose.model('messageschema',messageschema)
+    messageschema:mongoose.model('messageschema',messageschema),
+    roomschema:mongoose.model('roomschema',roomschema)
 };

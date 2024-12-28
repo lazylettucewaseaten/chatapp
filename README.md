@@ -3,6 +3,7 @@ Will add new features soon :)
 
 ## Live Demo
 - might be slow cause of free hosting
+- changes in latest update might take a month to reflect on the working url :)
 - https://candid-smakager-d5bee5.netlify.app/
 
 ## Features

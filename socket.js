@@ -10,7 +10,7 @@ const socketHandler = (server) => {
       credentials: true,
     },
   });
-
+  // const rooms = {};
   const authenticateSocket = (socket, next) => {
     const token = socket.handshake.auth.token;
     try {
@@ -25,12 +25,9 @@ const socketHandler = (server) => {
   io.use(authenticateSocket);
 
   io.on("connection", (socket) => {
-    // console.log(`User connected: ${socket.id}`);
-
-    socket.on("join-room", (roomname) => {
+    socket.on("join-room", ({roomname,userid}) => {
       socket.join(roomname);
-    //   console.log(`User ${socket.id} joined room ${roomname}`);
-    });
+  });
 
     socket.on("message", async ({ message, room }) => {
       try {
@@ -46,8 +43,18 @@ const socketHandler = (server) => {
       }
     });
 
+    socket.on("userjoining", async ({ userid, roomname }) => {
+      try {
+        socket.to(roomname).emit("recieve-user-joining", {
+          userid,roomname
+        });
+      } catch (error) {
+        console.error("Error saving message:", error);
+      }
+    });
+
     socket.on("disconnect", () => {
-    //   console.log(`User ${socket.id} disconnected`);
+    console.log("fuck off")
     });
   });
 };

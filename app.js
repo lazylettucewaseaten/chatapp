@@ -13,7 +13,7 @@ app.use(cors())
 
 
 const server = createServer(app);
-app.use(cors())
+// app.use(cors())
 
 
 
