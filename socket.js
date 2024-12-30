@@ -43,10 +43,10 @@ const socketHandler = (server) => {
       }
     });
 
-    socket.on("userjoining", async ({ userid, roomname }) => {
+    socket.on("userjoining", async ({ userid, roomname ,actualname}) => {
       try {
         socket.to(roomname).emit("recieve-user-joining", {
-          userid,roomname
+          userid,roomname,actualname
         });
       } catch (error) {
         console.error("Error saving message:", error);
@@ -54,7 +54,7 @@ const socketHandler = (server) => {
     });
 
     socket.on("disconnect", () => {
-    console.log("fuck off")
+    // console.log("fuck off")
     });
   });
 };

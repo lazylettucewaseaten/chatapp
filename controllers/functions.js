@@ -33,7 +33,7 @@ const loginuser = async (req, res) => {
       }
       const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET);
   
-      res.json({ token, userId: user._id  });
+      res.json({ token, userId: user._id  ,actualname :user.username});
     } catch (error) {
       console.error(error); 
       res.status(500).json({ error: "Error logging in" });
@@ -43,7 +43,6 @@ const loginuser = async (req, res) => {
 const getRoomMessages = async (req, res) => {
     try {
       const { room } = req.params;
-    //   console.log(room)
       const messages = await messageschema.find({ room }).select('userId message');
     //   console.log(messages)
       res.json(messages);
@@ -88,19 +87,20 @@ const makeRoomAdmins=async (req,res) => {
 }
 const createadminroom=async (req,res) => {
   try {
-    const {roomname,username}=req.params
+    const {roomname,username,actualname}=req.params
+    console.log(actualname)
     let room=await roomschema.findOne({room:roomname})
     if(!room){
       // console.log(`${roomname} not found `)
       room =new roomschema({
         room:roomname,
-        users:[{username,isadmin:true}],
+        users:[{username,isadmin:true,actualname}],
       })
     }
     else{
       const user = room.users.find((u) => u.username === username);
       if (!user) {
-        room.users.push({username:username,isadmin:false});
+        room.users.push({username:username,isadmin:false,actualname:actualname});
         // console.log(`${username} has entered the  room  ${roomname}`)
       }
     }

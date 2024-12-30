@@ -28,6 +28,7 @@ const Chat = () => {
   const [messages, setMessages] = useState([]);
   const [showAdminPanel, setShowAdminPanel] = useState(false); 
   const userid = localStorage.getItem("userId");
+  const actualname=localStorage.getItem("actualname");
   const messagesEndRef = useRef(null);
   const userMapRef = useRef(new Map());
   let currentuseradmin=false;
@@ -58,6 +59,7 @@ const Chat = () => {
         const newUser = {
           username: event.userid,
           isadmin: false, 
+          actualname:event.actualname,
         };
         userMapRef.current.set(newUser.username, newUser);
         setRoomUsers((prev) => [...prev, newUser]);
@@ -92,19 +94,19 @@ const Chat = () => {
       socket.emit("join-room",{roomname,userid});
       setRoom(roomname);
       setRoomname("");
-      axios.get(`http://localhost:3000/rooms/${roomname}/messages`).then((res) => {
-        setMessages(res.data);
-      });
+      
       // console.log("afsd")
       // console.log(messages)
       // console.log("sfd")
-      await axios.patch(`http://localhost:3000/makeroom/${roomname}/${userid}`)
+      // console.log(actualname)
+      await axios.patch(`http://localhost:3000/makeroom/${roomname}/${userid}/${actualname}`)
       const adminlist=await axios.get(`http://localhost:3000/getadmins/${roomname}`)
       if(adminlist.data.length!=0){
         const userlist=adminlist.data[0].users
         const adminInfoList = userlist.map((element) => ({
           username: element.username,
           isadmin: element.isadmin,
+          actualname:element.actualname,
         }));        
         setRoomUsers(() => {
           userMapRef.current.clear(); 
@@ -113,8 +115,10 @@ const Chat = () => {
           });
           return Array.from(userMapRef.current.values());
         });
-        socket.emit("userjoining",{userid,roomname})
-        // console.log(admininfo)
+        socket.emit("userjoining",{userid,roomname,actualname})
+        axios.get(`http://localhost:3000/rooms/${roomname}/messages`).then((res) => {
+          setMessages(res.data);
+        });
       }
     }
   };
@@ -126,10 +130,11 @@ const Chat = () => {
   };
 
   const deltemessage=()=>{
-    const usercheck=userMapRef.current.get(userid)
-    if(usercheck.isadmin){
-      axios.delete(`http://localhost:3000/delete/${room}`)
-    }
+    // const usercheck=userMapRef.current.get(userid)
+    // if(usercheck.isadmin){
+    //   axios.delete(`http://localhost:3000/delete/${room}`)
+    // }
+    console.log(userMapRef)
   }
 
   const adminpanel=()=>{
@@ -278,20 +283,25 @@ const Chat = () => {
                 background: 'rgba(255,255,255,0.7)'
               }}
             >
-              {messages.map((m, i) => (
-              // console.log(m)
+              {messages.map((m, i) => 
+                // console.log(m.userId)
+                // console.log(userMapRef.current.get(m.userId).actualname)
+              (
+                
                 <Box 
                   key={i}
                   sx={{
                     display: 'flex',
-                    justifyContent: m.userId === userid ? 'flex-end' : 'flex-start',
+                    // justifyContent: userMapRef.current.get(m.userId).actualname === actualname ? 'flex-end' : 'flex-start',
+                    justifyContent: (m.userId) === userid ? 'flex-end' : 'flex-start',
                     mb: 1
                   }}
                 >
                     <Box
                       sx={{
-                        backgroundColor: m.userId === userid ? '#e6f2ff' : '#fff0f0',
-                        color: m.userId === userid ? '#0d47a1' : '#b71c1c',
+                        // backgroundColor:userMapRef.current.get(m.userId).actualname === actualname  ? '#e6f2ff' : '#fff0f0',
+                        color: (m.userId) === userid  ? '#0d47a1' : '#b71c1c',
+                        backgroundColor:(m.userId) === userid  ? '#e6f2ff' : '#fff0f0',
                         padding: '10px',
                         borderRadius: '12px',
                         maxWidth: '100%',
@@ -312,7 +322,7 @@ const Chat = () => {
                           textAlign: 'left', 
                         }}
                       >
-                      {m.userId === userid ? 'You' : m.userId}
+                      {m.userId === userid ? 'You' : userMapRef.current.get(m.userId).actualname}
                       
                     </Typography>
 
@@ -395,7 +405,7 @@ const Chat = () => {
                 key={index} 
                 sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}
               >
-                <Typography>{user.username}</Typography>
+                <Typography>{user.actualname}</Typography>
                 <Typography 
                   sx={{ 
                     color: user.isadmin ? 'green' : 'red', 

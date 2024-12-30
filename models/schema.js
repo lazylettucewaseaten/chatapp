@@ -57,6 +57,7 @@ const messageschema = mongoose.Schema({
       {
           username: { type: String, required: true },
           isadmin: { type: Boolean },
+          actualname:{type:String,required:true},
       },
   ],
   })

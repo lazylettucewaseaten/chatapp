@@ -22,8 +22,10 @@ const LoginForm = () => {
       const res = await axios.post("http://localhost:3000/login", { username, password });
       const token = res.data.token;
       const id = res.data.userId;
+      const actualname=res.data.actualname;
       localStorage.setItem("authToken", token);
       localStorage.setItem("userId", id);
+      localStorage.setItem("actualname",actualname);
       navigate("/chat");
     } catch (err) {
       setError("Invalid username or password");
