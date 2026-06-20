@@ -1,26 +1,80 @@
-# Chatapp
-Will add new features soon :)
+# 💬 ChatApp
 
-## Live Demo
-- might be slow cause of free hosting
-- changes in latest update might take a month to reflect on the working url :)
-- https://candid-smakager-d5bee5.netlify.app/
+A full-stack, real-time group chat application featuring secure authentication, dynamic room management, and robust admin controls. Built using React, Node.js, Express, Socket.io, and MongoDB.
 
-## Features
-- **WebSocket** for real-time communication between clients and the server.
-- **JWT (JSON Web Token)** for secure user authentication and session management.
-- **Password Hashing** using bcrypt for safe password storage.
-- **AES-256 Encryption** for end-to-end encryption of messages.
-- **MongoDB** for storing user data and messages.
+## 🚀 Live Demo
+You can try the live application here:
+👉 **[https://chatapp.greatbrother864.workers.dev/](https://chatapp.greatbrother864.workers.dev/)**
+*(Note: Initial loading might take a few moments due to free server hosting wake-up times)*
 
-## SetUp 
-- Cretae ur .env file for them
-- PORT=3000
-- MONGO_URI=mongodb://localhost:27017/chatapp
-- JWT_SECRET=your_secret_key_for_jwt
-- AES_SECRET_KEY=your_secret_key_for_aes
+---
 
-## Make two folder one containing client other containing everything except client
+## ✨ Features
 
-- npm run dev to run the client[frontend]
-- node app.js to run the backend
+- **⚡ Real-Time Messaging**: Built on **Socket.io** to enable instant, bi-directional messaging and user connection events.
+- **Secure Authentication**: Includes user signup and login protected with **JWT (JSON Web Tokens)** and secure password hashing using **bcrypt**.
+- **Dynamic Room Admin Controls**: 
+  - Room creators automatically gain **Admin** status.
+  - Admins can designate other users as admins.
+  - Admins can permanently **delete rooms** and clear associated messages.
+- **Polished UI**: A clean, responsive user interface built using **Material UI (MUI)**.
+- **Message Persistence**: All chat histories and rooms are persisted reliably in **MongoDB**.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Frontend**: React (Vite), Material UI (MUI), Axios, Socket.io-client
+- **Backend**: Node.js, Express, Socket.io
+- **Database**: MongoDB (via Mongoose)
+- **Security**: JWT (jsonwebtoken), bcrypt
+
+---
+
+## ⚙️ Project Setup
+
+To run this project locally, you will need to set up both the backend and frontend.
+
+### 1. Backend Setup
+
+1. From the project root, create a `.env` file:
+   ```env
+   PORT=3000
+   URI=your_mongodb_connection_uri
+   JWT_SECRET=your_jwt_secret_key
+   ENCRYPTION_KEY=your_32_character_aes_key
+   ```
+2. Install backend dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the backend server:
+   ```bash
+   npm start
+   ```
+
+### 2. Frontend Setup
+
+1. Navigate to the `client/` folder:
+   ```bash
+   cd client
+   ```
+2. Install frontend dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the development server:
+   ```bash
+   npm run dev
+   ```
+
+---
+
+## 📂 Project Structure
+
+- `app.js` - Backend server entry point.
+- `/routes/` - Express API routes (authentication, messages, admin controls).
+- `/controllers/` - Backend business logic & database controllers.
+- `/models/` - Mongoose schemas (Users, Messages, Rooms).
+- `socket.js` - Socket.io connection and event handling.
+- `/client/` - React frontend application.
