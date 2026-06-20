@@ -88,7 +88,7 @@ const makeRoomAdmins=async (req,res) => {
 const createadminroom=async (req,res) => {
   try {
     const {roomname,username,actualname}=req.params
-    console.log(actualname)
+    // console.log(actualname)
     let room=await roomschema.findOne({room:roomname})
     if(!room){
       // console.log(`${roomname} not found `)
@@ -111,18 +111,26 @@ const createadminroom=async (req,res) => {
     console.log(error)
   }
 }
-const getDelete=async(req,res)=>{
-  try{
-    const {room}=req.params
-    await messageschema.deleteMany(
-      {room:room}
-    )
-    res.status(200).json({"message":"Deleted that chat room"})
+const getDelete = async (req, res) => {
+  try {
+    const { room, userid } = req.params;
+    const roomDetails = await roomschema.findOne({ room: room });
+    if (!roomDetails) {
+      return res.status(404).json({ error: "Room not found" });
+    }
+    const user = roomDetails.users.find(u => u.username === userid);
+    if (!user || !user.isadmin) {
+      return res.status(403).json({ error: "Unauthorized: Only room admins can delete this room" });
+    }
+    await messageschema.deleteMany({ room: room });
+    await roomschema.deleteOne({ room: room });
+    res.status(200).json({ message: "Successfully deleted the chat room and its messages" });
   }
-  catch(error){
-    console.log(error)
+  catch (error) {
+    console.log(error);
+    res.status(500).json({ error: "Could not delete room" });
   }
-}
+};
 //onfrontend make a variabel true for checking adming or not  
 //then if 
 module.exports={loginuser,registeruser,getRoomMessages,makeRoomAdmins,getDelete,getRoomAdmins,createadminroom}

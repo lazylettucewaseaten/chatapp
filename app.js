@@ -24,7 +24,7 @@ app.use('/',route)
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });
-const port=3000||process.env.PORT
+const port=process.env.PORT || 3000
 const start =async () => {
     try {
         console.log('Trying')

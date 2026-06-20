@@ -4,6 +4,7 @@ const { messageschema } = require('./models/schema');
 
 const socketHandler = (server) => {
   const io = new Server(server, {
+    maxHttpBufferSize: 1e7, // 10MB limit
     cors: {
       origin: "*",
       methods: ["GET", "POST", "PATCH"],
@@ -35,7 +36,7 @@ const socketHandler = (server) => {
         await newMessage.save();
 
         socket.to(room).emit("recieve-message", {
-          userId: socket.id,
+          userId: socket.userId,
           message: message,
         });
       } catch (error) {
@@ -51,6 +52,10 @@ const socketHandler = (server) => {
       } catch (error) {
         console.error("Error saving message:", error);
       }
+    });
+
+    socket.on("room-deleted", ({ room }) => {
+      socket.to(room).emit("recieve-room-deleted", { room });
     });
 
     socket.on("disconnect", () => {

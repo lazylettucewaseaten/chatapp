@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { io } from "socket.io-client";
 import { 
   Container, 
@@ -15,6 +15,8 @@ import SendIcon from '@mui/icons-material/Send';
 import LogoutIcon from '@mui/icons-material/Logout';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
+import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
+import InfoIcon from '@mui/icons-material/Info';
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -24,14 +26,12 @@ const Chat = () => {
   const [room, setRoom] = useState("");
   //room is to be usde in code and roomname is because of my  input box
   const [roomname, setRoomname] = useState("");
-  const [socketId, setSocketId] = useState("");
   const [messages, setMessages] = useState([]);
   const [showAdminPanel, setShowAdminPanel] = useState(false); 
   const userid = localStorage.getItem("userId");
   const actualname=localStorage.getItem("actualname");
   const messagesEndRef = useRef(null);
   const userMapRef = useRef(new Map());
-  let currentuseradmin=false;
 
   useEffect(() => {
     const token = localStorage.getItem("authToken");
@@ -44,7 +44,6 @@ const Chat = () => {
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
-      setSocketId(newSocket.id);
     });
 
     newSocket.on("recieve-message", (data) => {
@@ -67,6 +66,13 @@ const Chat = () => {
       // setRoomUsers(event);
     });
 
+    newSocket.on("recieve-room-deleted", ({ room: deletedRoom }) => {
+      alert(`The room "${deletedRoom}" has been deleted by an admin.`);
+      setRoom("");
+      setMessages([]);
+      setRoomUsers([]);
+    });
+
     return () => {
       newSocket.disconnect();
     };
@@ -86,6 +92,27 @@ const Chat = () => {
       setMessages((prev) => [...prev, msgData]);
       setMessage("");
     }
+  };
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 2 * 1024 * 1024) {
+      alert("Image is too large. Please select an image under 2MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64String = reader.result;
+      if (socket && room) {
+        const msgData = { message: base64String, userId: userid };
+        socket.emit("message", { ...msgData, room });
+        setMessages((prev) => [...prev, msgData]);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const onRoomJoin = async (e) => {
@@ -129,13 +156,33 @@ const Chat = () => {
     navigate("/login");
   };
 
-  const deltemessage=()=>{
-    // const usercheck=userMapRef.current.get(userid)
-    // if(usercheck.isadmin){
-    //   axios.delete(`http://localhost:3000/delete/${room}`)
-    // }
-    console.log(userMapRef)
-  }
+  const deltemessage = async () => {
+    if (!room) {
+      alert("You are not in any chat room.");
+      return;
+    }
+    const usercheck = userMapRef.current.get(userid);
+    if (!usercheck || !usercheck.isadmin) {
+      alert("Only admins can delete the room.");
+      return;
+    }
+    
+    if (window.confirm(`Are you sure you want to delete the room "${room}"? This will delete all messages and the room itself.`)) {
+      try {
+        await axios.delete(`http://localhost:3000/delete/${room}/${userid}`);
+        if (socket) {
+          socket.emit("room-deleted", { room });
+        }
+        setRoom("");
+        setMessages([]);
+        setRoomUsers([]);
+        alert("Room successfully deleted.");
+      } catch (err) {
+        console.error(err);
+        alert(err.response?.data?.error || "Failed to delete the room.");
+      }
+    }
+  };
 
   const adminpanel=()=>{
     setShowAdminPanel((prev) => !prev);
@@ -158,10 +205,10 @@ const Chat = () => {
         left: 0,
         width: '100%',
         height: '100%',
-        backgroundImage: 'url("https://images3.alphacoders.com/133/1337543.png")',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        filter: 'blur(10px)', 
+        backgroundImage: 'url("https://wallpaperaccess.com/full/269147.png")',
+        // backgroundSize: 'cover',
+        // backgroundPosition: 'center',
+        // filter: 'blur(10px)', 
         zIndex: -1, 
         transform: 'scale(1.1)'
       }
@@ -193,9 +240,24 @@ const Chat = () => {
               justifyContent: 'space-between'
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
-              Ashley's Chat Room
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <Typography variant="h6" sx={{ fontWeight: 'bold' }}>
+                {room ? `Room: ${room}` : "lazylettuce Chat Rooms"}
+              </Typography>
+              <IconButton
+                onClick={() => navigate("/readme")}
+                color="inherit"
+                size="small"
+                sx={{
+                  ml: 1,
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.2)'
+                  }
+                }}
+              >
+                <InfoIcon fontSize="small" />
+              </IconButton>
+            </Box>
             <IconButton
               onClick={deltemessage}
               color="inherit"
@@ -322,24 +384,59 @@ const Chat = () => {
                           textAlign: 'left', 
                         }}
                       >
-                      {m.userId === userid ? 'You' : userMapRef.current.get(m.userId).actualname}
+                      {m.userId === userid ? 'You' : (userMapRef.current.get(m.userId)?.actualname || 'User')}
                       
                     </Typography>
 
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      backgroundColor: m.userId === userid ? '#e6f2ff' : '#fff0f0',
-                      color: m.userId === userid ? '#0d47a1' : '#b71c1c',
-                      padding: '10px',
-                      borderRadius: '12px',
-                      maxWidth: '100%',
-                      wordWrap: 'break-word',
-                      boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
-                    }}
-                  >
-                    {m.message}
-                  </Typography>
+                  {m.message && m.message.startsWith("data:image/") ? (
+                    <Box
+                      sx={{
+                        backgroundColor: m.userId === userid ? '#e6f2ff' : '#fff0f0',
+                        padding: '6px',
+                        borderRadius: '12px',
+                        maxWidth: '100%',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      <Box
+                        component="img"
+                        src={m.message}
+                        alt="shared media"
+                        sx={{
+                          maxWidth: '100%',
+                          maxHeight: '300px',
+                          borderRadius: '8px',
+                          display: 'block',
+                          cursor: 'pointer',
+                          transition: 'transform 0.2s',
+                          '&:hover': {
+                            transform: 'scale(1.02)'
+                          }
+                        }}
+                        onClick={() => {
+                          const newWindow = window.open();
+                          if (newWindow) {
+                            newWindow.document.write(`<img src="${m.message}" style="max-width:100%; max-height:100%; display:block; margin:auto;" />`);
+                          }
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Typography
+                      variant="body1"
+                      sx={{
+                        backgroundColor: m.userId === userid ? '#e6f2ff' : '#fff0f0',
+                        color: m.userId === userid ? '#0d47a1' : '#b71c1c',
+                        padding: '10px',
+                        borderRadius: '12px',
+                        maxWidth: '100%',
+                        wordWrap: 'break-word',
+                        boxShadow: '0 2px 5px rgba(0,0,0,0.1)'
+                      }}
+                    >
+                      {m.message}
+                    </Typography>
+                  )}
                 </Box>
                 </Box>
               ))}
@@ -349,6 +446,24 @@ const Chat = () => {
 
             <form onSubmit={handleSubmit}>
               <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                <IconButton
+                  component="label"
+                  sx={{
+                    mr: 1,
+                    color: '#667eea',
+                    '&:hover': {
+                      background: 'rgba(102, 126, 234, 0.1)',
+                    }
+                  }}
+                >
+                  <AddPhotoAlternateIcon />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={handleImageUpload}
+                  />
+                </IconButton>
                 <TextField
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}

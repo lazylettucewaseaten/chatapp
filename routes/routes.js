@@ -4,7 +4,7 @@ const {loginuser,registeruser, getRoomMessages,makeRoomAdmins, getDelete, getRoo
 router.route('/login').post(loginuser);
 router.route('/register').post(registeruser)
 router.route("/rooms/:room/messages").get(getRoomMessages)
-router.route('/delete/:room').delete(getDelete)
+router.route('/delete/:room/:userid').delete(getDelete)
 router.route('/makeroom/:roomname/:username/:actualname').patch(createadminroom)
 router.route('/getadmins/:room').get(getRoomAdmins) 
 
