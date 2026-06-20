@@ -19,7 +19,7 @@ const LoginForm = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post("http://localhost:3000/login", { username, password });
+      const res = await axios.post("https://chatappmedia.onrender.com/login", { username, password });
       const token = res.data.token;
       const id = res.data.userId;
       const actualname=res.data.actualname;
