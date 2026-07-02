@@ -2,9 +2,6 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 
 const cheerio = require('cheerio');
 
-
-// Initialize the Gemini API client using the key from .env
-// You will need to install the package first: npm install @google/generative-ai
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 const processMessageWithAI = async (message, roomFeatures) => {
@@ -25,8 +22,6 @@ const processMessageWithAI = async (message, roomFeatures) => {
     }
 
 
-
-    // 2. LINK SUMMARIZER AGENT (You will build this!)
     if (roomFeatures.linkSummarizer) {
 
         const urlwords  =['https'];
@@ -79,10 +74,16 @@ async function scraper(url) {
 const runSchedulerAgent = async (messageText) => {
     try {
         // Wgemini for now idk why 
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const currentDate = new Date().toISOString();
 
         const prompt = `
         You are a scheduling assistant. Analyze the following chat message and extract event details.
+        CRITICAL CONTEXT: The current date and time right now is ${currentDate}. 
+        You must calculate all relative dates (like "tomorrow", "next Friday", or dates without a year) relative to this current date!
+        IMPORTANT: If the user mentions a specific date but does not mention a year, you MUST use the current year from the date provided above.
+
         If the message contains an intent to schedule something, extract the title, start time, and end time.
         Return ONLY a JSON object with no markdown formatting.
         Format times in UTC string format (YYYYMMDDTHHMMSSZ).
