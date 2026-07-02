@@ -4,7 +4,7 @@ A full-stack, real-time group chat application featuring secure authentication, 
 
 ##  Live Demo & Video
 You can try the live application here:
- **[https://chatapp.greatbrother864.workers.dev/](https://chatapp.greatbrother864.workers.dev/)**
+ **[https://chatapp-ej1.pages.dev/](https://chatapp-ej1.pages.dev/)**
 *(Note: Initial loading might take a few moments due to free server hosting wake-up times)*
 
 ###  Watch the Demo
