@@ -17,6 +17,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings';
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import InfoIcon from '@mui/icons-material/Info';
+import Switch from '@mui/material/Switch';
+import FormControlLabel from '@mui/material/FormControlLabel';
 
 const Chat = () => {
   const navigate = useNavigate();
@@ -28,6 +30,7 @@ const Chat = () => {
   const [roomname, setRoomname] = useState("");
   const [messages, setMessages] = useState([]);
   const [showAdminPanel, setShowAdminPanel] = useState(false); 
+  const [aiFeatures, setAiFeatures] = useState({ enabled: false, scheduler: false, linkSummarizer: false });
   const userid = localStorage.getItem("userId");
   const actualname=localStorage.getItem("actualname");
   const messagesEndRef = useRef(null);
@@ -48,6 +51,10 @@ const Chat = () => {
 
     newSocket.on("recieve-message", (data) => {
       setMessages((prev) => [...prev, data]);
+    });
+
+    newSocket.on("ai_action",(data)=>{
+      setMessages((prev) => [...prev,{isai:true,...data}]);
     });
 
     newSocket.on("recieve-user-joining", (event) => {
@@ -74,6 +81,8 @@ const Chat = () => {
     });
 
     return () => {
+      newSocket.off("recieve-message");
+      newSocket.off("ai_action"); 
       newSocket.disconnect();
     };
   }, [navigate, userid]);
@@ -142,6 +151,12 @@ const Chat = () => {
           });
           return Array.from(userMapRef.current.values());
         });
+
+
+        if (adminlist.data[0].aiFeatures) {
+          setAiFeatures(adminlist.data[0].aiFeatures);
+        }
+
         socket.emit("userjoining",{userid,roomname,actualname})
         axios.get(`https://chatappmedia.onrender.com/rooms/${roomname}/messages`).then((res) => {
           setMessages(res.data);
@@ -187,6 +202,20 @@ const Chat = () => {
   const adminpanel=()=>{
     setShowAdminPanel((prev) => !prev);
   }
+
+  const toggleAiFeature = async (feature) => {
+    const updatedFeatures = { ...aiFeatures, [feature]: !aiFeatures[feature] };
+    setAiFeatures(updatedFeatures);
+
+    try {
+      await axios.patch(`https://chatappmedia.onrender.com/rooms/${room}/settings`, {
+        aiFeatures: updatedFeatures
+      });
+    } catch (error) {
+      console.error("Failed to update AI settings", error);
+      alert("Failed to update AI settings on the server.");
+    }
+  };
 
   return (
     <Box 
@@ -345,16 +374,52 @@ const Chat = () => {
                 background: 'rgba(255,255,255,0.7)'
               }}
             >
-              {messages.map((m, i) => 
-                // console.log(m.userId)
-                // console.log(userMapRef.current.get(m.userId).actualname)
-              (
-                
+              {messages.map((m, i) => {
+                if (m.isai) {
+                  return (
+                    <Box key={i} sx={{ display: 'flex', justifyContent: 'center', mb: 2 }}>
+                      <Paper
+                        elevation={3}
+                        sx={{
+                          padding: 2,
+                          background: 'linear-gradient(135deg, #929be7 0%, #d183eb 100%)',
+                          borderRadius: '16px',
+                          color: '#fff',
+                          width: '80%',
+                          boxShadow: '0 4px 15px rgba(253, 160, 133, 0.4)'
+                        }}
+                      >
+                        <Typography variant="subtitle2" sx={{ fontWeight: 'bold', mb: 1, display: 'flex', alignItems: 'center' }}>
+                          AI Assistant
+                        </Typography>
+                        {m.type === 'calendar_invite' && (
+                          <Box>
+                            <Typography variant="body2" sx={{ mb: 1 }}>I noticed you're scheduling something!</Typography>
+                            <Button 
+                              variant="contained" 
+                              href={m.url} 
+                              target="_blank"
+                              sx={{ background: 'rgba(255,255,255,0.2)', color: 'white', '&:hover': { background: 'rgba(255,255,255,0.3)' } }}
+                            >
+                              📅 Add to Calendar
+                            </Button>
+                          </Box>
+                        )}
+                        {m.type === 'link_summary' && (
+                          <Box>
+                            <Typography variant="body2" sx={{ fontStyle: 'italic' }}>{m.summary}</Typography>
+                          </Box>
+                        )}
+                      </Paper>
+                    </Box>
+                  );
+                }
+
+                return (
                 <Box 
                   key={i}
                   sx={{
                     display: 'flex',
-                    // justifyContent: userMapRef.current.get(m.userId).actualname === actualname ? 'flex-end' : 'flex-start',
                     justifyContent: (m.userId) === userid ? 'flex-end' : 'flex-start',
                     mb: 1
                   }}
@@ -439,7 +504,8 @@ const Chat = () => {
                   )}
                 </Box>
                 </Box>
-              ))}
+                );
+              })}
               <div ref={messagesEndRef} />
             </Box>
 
@@ -514,7 +580,7 @@ const Chat = () => {
             boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
           }}
         >
-          <Typography variant="h6" sx={{ mb: 2 }}>
+          <Typography variant="h6" sx={{ mb: 2 }}>Room Users</Typography>
           {roomUsers.map((user, index) => (
               <Box 
                 key={index} 
@@ -531,7 +597,30 @@ const Chat = () => {
                 </Typography>
               </Box>
             ))}
-          </Typography>
+
+          {userMapRef.current.get(userid)?.isadmin && (
+            <>
+              <Typography variant="h6" sx={{ mt: 4, mb: 2 }}>AI Agent Settings</Typography>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <FormControlLabel
+                  control={<Switch checked={aiFeatures.enabled || false} onChange={() => toggleAiFeature('enabled')} />}
+                  label="Enable Master AI"
+                />
+                {aiFeatures.enabled && (
+                  <Box sx={{ ml: 4, display: 'flex', flexDirection: 'column' }}>
+                    <FormControlLabel
+                      control={<Switch checked={aiFeatures.scheduler || false} onChange={() => toggleAiFeature('scheduler')} color="secondary" />}
+                      label="Calendar Scheduler"
+                    />
+                    <FormControlLabel
+                      control={<Switch checked={aiFeatures.linkSummarizer || false} onChange={() => toggleAiFeature('linkSummarizer')} color="secondary" />}
+                      label="Link Summarizer"
+                    />
+                  </Box>
+                )}
+              </Box>
+            </>
+          )}
         </Paper>
       )}
     </Box>

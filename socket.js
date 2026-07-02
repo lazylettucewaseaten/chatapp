@@ -1,7 +1,9 @@
 const { Server } = require("socket.io");
 const jwt = require('jsonwebtoken');
-const { messageschema } = require('./models/schema');
+const { messageschema,roomschema } = require('./models/schema');
 
+const {processMessageWithAI} =require('./controllers/aiController');
+const {getRoomDetails} = require('./controllers/functions');
 const socketHandler = (server) => {
   const io = new Server(server, {
     maxHttpBufferSize: 1e7, // 10MB limit
@@ -34,6 +36,16 @@ const socketHandler = (server) => {
       try {
         const newMessage = new messageschema({ room, userId: socket.userId, message });
         await newMessage.save();
+
+        const roomDetails = await getRoomDetails(room);
+        let aioutput = null;
+
+        if (roomDetails && roomDetails.aiFeatures && roomDetails.aiFeatures.enabled) {
+           aioutput = await processMessageWithAI(message, roomDetails.aiFeatures);
+           if (aioutput) {
+             io.to(room).emit("ai_action", aioutput);
+           }
+        }
 
         socket.to(room).emit("recieve-message", {
           userId: socket.userId,

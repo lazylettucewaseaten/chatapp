@@ -8,6 +8,7 @@ const mongoose=require('mongoose')
 const userschema=mongoose.Schema({
     username: { type: String, required: true, unique: true },
     password: { type: String, required: true }, 
+
 });
 
 //messagge schema for my end to eend encrytpoon
@@ -60,6 +61,11 @@ const messageschema = mongoose.Schema({
           actualname:{type:String,required:true},
       },
   ],
+  aiFeatures: {
+    enabled: { type: Boolean, default: false },
+    scheduler: { type: Boolean, default: false },
+    linkSummarizer: { type: Boolean, default: false }
+  }
   })
   
 module.exports = {

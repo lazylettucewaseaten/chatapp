@@ -131,6 +131,39 @@ const getDelete = async (req, res) => {
     res.status(500).json({ error: "Could not delete room" });
   }
 };
+
+
+const getRoomDetails = async (roomName) => {
+  try {
+    const roomDetails = await roomschema.findOne({ room: roomName });
+    return roomDetails; 
+  } catch (error) { 
+    console.log("Error fetching room details:", error);
+    return null;
+  }
+};
 //onfrontend make a variabel true for checking adming or not  
 //then if 
-module.exports={loginuser,registeruser,getRoomMessages,makeRoomAdmins,getDelete,getRoomAdmins,createadminroom}
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+
+const updateRoomSettings = async (req, res) => {
+  try {
+    const { room } = req.params;
+    const { aiFeatures } = req.body;
+    
+    const updatedRoom = await roomschema.findOneAndUpdate(
+      { room },
+      { $set: { aiFeatures } },
+      { new: true }
+    );
+    
+    if (!updatedRoom) return res.status(404).json({ error: "Room not found" });
+    res.json(updatedRoom);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Failed to update settings" });
+  }
+};
+
+module.exports={loginuser,registeruser,getRoomMessages,makeRoomAdmins,getDelete,getRoomAdmins,createadminroom,getRoomDetails,updateRoomSettings}
