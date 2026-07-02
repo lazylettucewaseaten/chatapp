@@ -95,9 +95,21 @@ const runSchedulerAgent = async (messageText) => {
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
         
-        // Parse the JSON output from the LLM, stripping any markdown backticks it might accidentally include
-        const cleanJsonText = responseText.replace(/```json/g, '').replace(/```/g, '').trim();
-        const eventData = JSON.parse(cleanJsonText);
+        // Find the first { and last } to extract the JSON safely regardless of markdown or conversational filler
+        const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+        
+        if (!jsonMatch) {
+            console.error("No JSON found in response:", responseText);
+            return null;
+        }
+
+        let eventData;
+        try {
+            eventData = JSON.parse(jsonMatch[0]);
+        } catch (e) {
+            console.error("JSON Parse Error on string:", jsonMatch[0]);
+            return null;
+        }
 
         if (eventData.isEvent === false || !eventData.title) {
             return null; 
