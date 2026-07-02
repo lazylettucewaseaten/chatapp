@@ -43,7 +43,7 @@ const Chat = () => {
       return;
     }
 
-    const newSocket = io("https://chatappmedia.onrender.com", { auth: { token } });
+    const newSocket = io("http://localhost:3000", { auth: { token } });
     setSocket(newSocket);
 
     newSocket.on("connect", () => {
@@ -135,8 +135,8 @@ const Chat = () => {
       // console.log(messages)
       // console.log("sfd")
       // console.log(actualname)
-      await axios.patch(`https://chatappmedia.onrender.com/makeroom/${roomname}/${userid}/${actualname}`)
-      const adminlist=await axios.get(`https://chatappmedia.onrender.com/getadmins/${roomname}`)
+      await axios.patch(`http://localhost:3000/makeroom/${roomname}/${userid}/${actualname}`)
+      const adminlist=await axios.get(`http://localhost:3000/getadmins/${roomname}`)
       if(adminlist.data.length!=0){
         const userlist=adminlist.data[0].users
         const adminInfoList = userlist.map((element) => ({
@@ -158,7 +158,7 @@ const Chat = () => {
         }
 
         socket.emit("userjoining",{userid,roomname,actualname})
-        axios.get(`https://chatappmedia.onrender.com/rooms/${roomname}/messages`).then((res) => {
+        axios.get(`http://localhost:3000/rooms/${roomname}/messages`).then((res) => {
           setMessages(res.data);
         });
       }
@@ -184,7 +184,7 @@ const Chat = () => {
     
     if (window.confirm(`Are you sure you want to delete the room "${room}"? This will delete all messages and the room itself.`)) {
       try {
-        await axios.delete(`https://chatappmedia.onrender.com/delete/${room}/${userid}`);
+        await axios.delete(`http://localhost:3000/delete/${room}/${userid}`);
         if (socket) {
           socket.emit("room-deleted", { room });
         }
@@ -208,7 +208,7 @@ const Chat = () => {
     setAiFeatures(updatedFeatures);
 
     try {
-      await axios.patch(`https://chatappmedia.onrender.com/rooms/${room}/settings`, {
+      await axios.patch(`http://localhost:3000/rooms/${room}/settings`, {
         aiFeatures: updatedFeatures
       });
     } catch (error) {

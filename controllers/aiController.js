@@ -74,9 +74,9 @@ async function scraper(url) {
 const runSchedulerAgent = async (messageText) => {
     try {
         // Wgemini for now idk why 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
 
-        const currentDate = new Date().toISOString();
+        const currentDate = new Date().toString();
 
         const prompt = `
         You are a scheduling assistant. Analyze the following chat message and extract event details.
@@ -85,7 +85,8 @@ const runSchedulerAgent = async (messageText) => {
         IMPORTANT: If the user mentions a specific date but does not mention a year, you MUST use the current year from the date provided above.
 
         If the message contains an intent to schedule something, extract the title, start time, and end time.
-        Return ONLY a JSON object with no markdown formatting.
+        Return ONLY a JSON object with exactly these keys: "isEvent", "title", "startTime", "endTime".
+        Do NOT use snake_case like "start_time". Use exact camelCase: "startTime", "endTime".
         Format times in UTC string format (YYYYMMDDTHHMMSSZ).
         If there is no scheduling intent, return {"isEvent": false}.
 
@@ -94,8 +95,11 @@ const runSchedulerAgent = async (messageText) => {
 
         const result = await model.generateContent(prompt);
         const responseText = result.response.text();
+
+        // console.log(currentDate);
+        // console.log(responseText);
+
         
-        // Find the first { and last } to extract the JSON safely regardless of markdown or conversational filler
         const jsonMatch = responseText.match(/\{[\s\S]*\}/);
         
         if (!jsonMatch) {
@@ -115,8 +119,6 @@ const runSchedulerAgent = async (messageText) => {
             return null; 
         }
 
-        // Generate the Google Calendar Template URL
-        // Example: https://calendar.google.com/calendar/render?action=TEMPLATE&text=Meeting&dates=20260703T170000Z/20260703T180000Z
         const titleEncoded = encodeURIComponent(eventData.title);
         const dates = `${eventData.startTime}/${eventData.endTime}`;
         
